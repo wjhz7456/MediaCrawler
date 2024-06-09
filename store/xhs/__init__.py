@@ -4,12 +4,9 @@
 # @Desc    :
 from typing import List
 
-import config
-
 from . import xhs_store_impl
 from .xhs_store_impl import *
-
-
+import config
 class XhsStoreFactory:
     STORES = {
         "csv": XhsCsvStoreImplement,
@@ -31,7 +28,6 @@ async def update_xhs_note(note_item: Dict):
     interact_info = note_item.get("interact_info", {})
     image_list: List[Dict] = note_item.get("image_list", [])
     tag_list: List[Dict] = note_item.get("tag_list", [])
-
     video_url = ''
     if note_item.get('type') == 'video':
         videos = note_item.get('video').get('media').get('stream').get('h264')
@@ -69,7 +65,6 @@ async def batch_update_xhs_note_comments(note_id: str, comments: List[Dict]):
     for comment_item in comments:
         await update_xhs_note_comment(note_id, comment_item)
 
-
 async def update_xhs_note_comment(note_id: str, comment_item: Dict):
     user_info = comment_item.get("user_info", {})
     comment_id = comment_item.get("id")
@@ -77,6 +72,7 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
     target_comment = comment_item.get("target_comment", {})
     local_db_item = {
         "comment_id": comment_id,
+        # "red_id": comment_item.get("red_id"),
         "create_time": comment_item.get("create_time"),
         "ip_location": comment_item.get("ip_location"),
         "note_id": note_id,
@@ -90,6 +86,7 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
         "last_modify_ts": utils.get_current_timestamp(),
     }
     utils.logger.info(f"[store.xhs.update_xhs_note_comment] xhs note comment:{local_db_item}")
+
     await XhsStoreFactory.create_store().store_comment(local_db_item)
 
 
@@ -109,6 +106,7 @@ async def save_creator(user_id: str, creator: Dict):
 
     local_db_item = {
         'user_id': user_id,
+        'red_id': user_info.get('redId'),
         'nickname': user_info.get('nickname'),
         'gender': '女' if user_info.get('gender') == 1 else '男',
         'avatar': user_info.get('images'),
