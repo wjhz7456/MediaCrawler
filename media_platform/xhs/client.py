@@ -163,7 +163,7 @@ class XiaoHongShuClient(AbstractApiClient):
 
     async def get_note_by_keyword(
             self, keyword: str,
-            page: int = 1, page_size: int = 20,
+            page: int = 1, page_size: int = 30,
             sort: SearchSortType = SearchSortType.GENERAL,
             note_type: SearchNoteType = SearchNoteType.ALL
     ) -> Dict:
