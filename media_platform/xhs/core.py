@@ -8,11 +8,12 @@ from playwright.async_api import (BrowserContext, BrowserType, Page,
                                   async_playwright)
 
 import config
+from async_db import AsyncMysqlDB
 from base.base_crawler import AbstractCrawler
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from store import xhs as xhs_store
 from tools import utils
-from var import crawler_type_var
+from var import crawler_type_var, media_crawler_db_var
 
 from .client import XiaoHongShuClient
 from .exception import DataFetchError
@@ -98,7 +99,7 @@ class XiaoHongShuCrawler(AbstractCrawler):
     async def search(self) -> None:
         """Search for notes and retrieve their comment information."""
         utils.logger.info("[XiaoHongShuCrawler.search] Begin search xiaohongshu keywords")
-        xhs_limit_count = 20  # xhs limit page fixed value
+        xhs_limit_count = 2  # xhs limit page fixed value
         if config.CRAWLER_MAX_NOTES_COUNT < xhs_limit_count:
             config.CRAWLER_MAX_NOTES_COUNT = xhs_limit_count
         start_page = self.start_page
@@ -140,21 +141,28 @@ class XiaoHongShuCrawler(AbstractCrawler):
     async def get_creators_and_notes(self) -> None:
         """Get creator's notes and retrieve their comment information."""
         utils.logger.info("[XiaoHongShuCrawler.get_creators_and_notes] Begin get xiaohongshu creators")
+        # 从数据库中取得user_id
+        async_db_conn: AsyncMysqlDB = media_crawler_db_var.get()
+        # 对标记数据进行查询red_id
+        sql: str = f"select user_id from xhs_note_comment where select_flag = '1'"
+        rows: List[Dict] = await async_db_conn.query(sql)
+        config.XHS_CREATOR_ID_LIST = [row["user_id"] for row in rows]
         for user_id in config.XHS_CREATOR_ID_LIST:
             # get creator detail info from web html content
             createor_info: Dict = await self.xhs_client.get_creator_info(user_id=user_id)
             if createor_info:
                 await xhs_store.save_creator(user_id, creator=createor_info)
-
+            # creator下的笔记的评论注释
+            # 只需要用户的redid，所以注释掉，需要的话去掉注释即可恢复
             # Get all note information of the creator
-            all_notes_list = await self.xhs_client.get_all_notes_by_creator(
-                user_id=user_id,
-                crawl_interval=random.random(),
-                callback=self.fetch_creator_notes_detail
-            )
-
-            note_ids = [note_item.get("note_id") for note_item in all_notes_list]
-            await self.batch_get_note_comments(note_ids)
+            # all_notes_list = await self.xhs_client.get_all_notes_by_creator(
+            #     user_id=user_id,
+            #     crawl_interval=random.random(),
+            #     callback=self.fetch_creator_notes_detail
+            # )
+            #
+            # note_ids = [note_item.get("note_id") for note_item in all_notes_list]
+            # await self.batch_get_note_comments(note_ids)
 
     async def fetch_creator_notes_detail(self, note_list: List[Dict]):
         """

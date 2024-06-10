@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+from random import random
 from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import urlencode
 
@@ -271,6 +272,25 @@ class XiaoHongShuClient(AbstractApiClient):
                     f"[XiaoHongShuClient.get_note_all_comments] No 'comments' key found in response: {comments_res}")
                 break
             comments = comments_res["comments"]
+            # 添加循环red_id
+            # for comment in comments:
+            #     comment['red_id'] = ''
+            #     user_id = comment['user_info']['user_id']
+            #     await asyncio.sleep(2)
+            #     createor_info: Dict = await self.get_creator_info(user_id=user_id)
+            #     if createor_info:
+            #         user_info = createor_info.get('basicInfo', {})
+            #         comment['red_id'] = user_info.get('redId')  # 将 red_id 添加到与 user_info 同级别的位置
+            #     # 遍历子评论
+            #     for sub_comment in comment.get('sub_comments', []):
+            #         sub_comment['red_id'] = ''
+            #         user_id = sub_comment['user_info']['user_id']
+            #         await asyncio.sleep(2)
+            #         sub_createor_info: Dict = await self.get_creator_info(user_id=user_id)
+            #         if sub_createor_info:
+            #             user_info = sub_createor_info.get('basicInfo', {})
+            #             sub_comment['red_id'] = user_info.get('redId')  # 将 red_id 添加到与 user_info 同级别的位置
+
             if callback:
                 await callback(note_id, comments)
             await asyncio.sleep(crawl_interval)
